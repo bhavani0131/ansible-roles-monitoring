@@ -4,12 +4,13 @@
     shell: /bin/false
     create_home: no
 
-- name: Create directories
+- name: Create prometheus directories
   file:
     path: "{{ item }}"
     state: directory
     owner: prometheus
     group: prometheus
+    mode: '0755'
   loop:
     - /etc/prometheus
     - /var/lib/prometheus
@@ -35,17 +36,21 @@
     - prometheus
     - promtool
 
-- name: Copy config
+- name: Copy config template
   template:
     src: prometheus.yml.j2
     dest: /etc/prometheus/prometheus.yml
+    owner: prometheus
+    group: prometheus
 
-- name: Copy alert rules
+- name: Copy alert rules template
   template:
     src: alert.rules.yml.j2
     dest: /etc/prometheus/alert.rules.yml
+    owner: prometheus
+    group: prometheus
 
-- name: Create service
+- name: Create service unit
   copy:
     dest: /etc/systemd/system/prometheus.service
     content: |
@@ -63,8 +68,9 @@
       [Install]
       WantedBy=multi-user.target
 
-- name: Start Prometheus
+- name: Start Prometheus service
   systemd:
     name: prometheus
     enabled: yes
     state: started
+    daemon_reload: yes
