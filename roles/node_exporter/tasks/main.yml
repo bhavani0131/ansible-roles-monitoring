@@ -2,34 +2,45 @@
   user:
     name: node_exporter
     shell: /bin/false
+    create_home: no
 
-- name: Download
+- name: Download Node Exporter
   get_url:
     url: https://github.com/prometheus/node_exporter/releases/download/v1.8.2/node_exporter-1.8.2.linux-amd64.tar.gz
     dest: /tmp/node.tar.gz
 
-- name: Extract
+- name: Extract archive
   unarchive:
     src: /tmp/node.tar.gz
     dest: /tmp/
     remote_src: yes
 
-- name: Copy binary
+- name: Copy binary to path
   copy:
     src: /tmp/node_exporter-1.8.2.linux-amd64/node_exporter
     dest: /usr/local/bin/
     mode: '0755'
     remote_src: yes
 
-- name: Service
+- name: Create systemd service
   copy:
     dest: /etc/systemd/system/node_exporter.service
     content: |
-      [Service]
-      ExecStart=/usr/local/bin/node_exporter
+      [Unit]
+      Description=Node Exporter
+      After=network-online.target
 
-- name: Start
+      [Service]
+      User=node_exporter
+      ExecStart=/usr/local/bin/node_exporter
+      Restart=always
+
+      [Install]
+      WantedBy=multi-user.target
+
+- name: Start and enable node_exporter service
   systemd:
     name: node_exporter
     enabled: yes
     state: started
+    daemon_reload: yes
